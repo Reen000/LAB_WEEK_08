@@ -2,13 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- ✅ Tambahkan izin foreground service & notifikasi -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- (Opsional, boleh ditambah kalau memang perlu data sync) -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-
-
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
         android:allowBackup="true"
@@ -20,12 +16,19 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LAB_WEEK_08"
         tools:targetApi="31">
+
         <service
             android:name=".NotificationService"
             android:enabled="true"
-            android:exported="true"
-            android:foregroundServiceType="mediaPlayback">
-        </service>
+            android:exported="false"
+            android:foregroundServiceType="dataSync"/>
+
+        <service
+            android:name=".SecondNotificationService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="dataSync"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -35,5 +38,4 @@
             </intent-filter>
         </activity>
     </application>
-
 </manifest>

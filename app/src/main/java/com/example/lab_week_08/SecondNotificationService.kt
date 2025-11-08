@@ -15,7 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 
-class NotificationService : Service() {
+class SecondNotificationService : Service() {
 
     private lateinit var notificationBuilder: NotificationCompat.Builder
     private lateinit var serviceHandler: Handler
@@ -24,11 +24,9 @@ class NotificationService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        // 1. Buat notifikasi dan mulai Foreground Service
         notificationBuilder = startForegroundService()
 
-        // 2. Buat HandlerThread dan Handler untuk menjalankan tugas berat
-        val handlerThread = HandlerThread("FirstServiceThread")
+        val handlerThread = HandlerThread("SecondServiceThread")
             .apply { start() }
         serviceHandler = Handler(handlerThread.looper)
     }
@@ -36,19 +34,14 @@ class NotificationService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val returnValue = super.onStartCommand(intent, flags, startId)
 
-        // Ambil ID channel dari Intent
         val id = intent?.getStringExtra(EXTRA_ID)
             ?: throw IllegalStateException("Channel ID must be provided")
 
-        // Kirim tugas ke handler thread
         serviceHandler.post {
-            // Hitung mundur (10 detik) dan update notifikasi
-            countDownFromTenToZero(notificationBuilder)
-            // Beri tahu MainActivity bahwa proses layanan selesai
+            // Hitung mundur (5 detik)
+            countDownFromFiveToZero(notificationBuilder)
             notifyCompletion(id)
-            // Hentikan foreground service (menghilangkan notifikasi)
             stopForeground(STOP_FOREGROUND_REMOVE)
-            // Hentikan dan hancurkan layanan
             stopSelf()
         }
         return returnValue
@@ -56,36 +49,32 @@ class NotificationService : Service() {
 
     private fun startForegroundService(): NotificationCompat.Builder {
         val pendingIntent = getPendingIntent()
-        val channelId = createNotificationChannel() // PENTING: Membuat Channel
+        val channelId = createNotificationChannel()
 
         val notificationBuilder = getNotificationBuilder(pendingIntent, channelId)
 
-        // PENTING: Memulai foreground service (ini yang menampilkan notifikasi pertama kali)
         startForeground(NOTIFICATION_ID, notificationBuilder.build())
         return notificationBuilder
     }
 
-    // Fungsi untuk memperbarui notifikasi untuk menampilkan hitungan mundur
-    private fun countDownFromTenToZero(notificationBuilder: NotificationCompat.Builder) {
+    // Fungsi untuk hitungan mundur 5 detik
+    private fun countDownFromFiveToZero(notificationBuilder: NotificationCompat.Builder) {
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
-        for (i in 10 downTo 0) { // Hitung mundur 10 detik
+        for (i in 5 downTo 0) { // Durasi 5 detik
             Thread.sleep(1000L)
-            notificationBuilder.setContentText("$i seconds until first warning")
+            notificationBuilder.setContentText("$i seconds until second warning")
                 .setSilent(true)
-            // Memperbarui notifikasi
             notificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
         }
     }
 
-    // Perbarui LiveData melalui Main Thread
     private fun notifyCompletion(id: String) {
         Handler(Looper.getMainLooper()).post {
             mutableID.value = id
         }
     }
 
-    // Mengkonfigurasi PendingIntent
     private fun getPendingIntent(): PendingIntent {
         val flag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             PendingIntent.FLAG_IMMUTABLE
@@ -98,11 +87,10 @@ class NotificationService : Service() {
         )
     }
 
-    // PENTING: Membuat Notification Channel
     private fun createNotificationChannel(): String {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channelId = "001"
-            val channelName = "001 First Notification Channel"
+            val channelId = "002" // ID Channel yang berbeda
+            val channelName = "002 Second Notification Channel"
             val channelPriority = NotificationManager.IMPORTANCE_DEFAULT
 
             val channel = NotificationChannel(channelId, channelName, channelPriority)
@@ -110,7 +98,6 @@ class NotificationService : Service() {
             val service = requireNotNull(
                 ContextCompat.getSystemService(this, NotificationManager::class.java)
             )
-            // Panggilan yang mengikat Channel
             service.createNotificationChannel(channel)
             channelId
         } else {
@@ -118,21 +105,19 @@ class NotificationService : Service() {
         }
     }
 
-    // Membangun Notification Builder
     private fun getNotificationBuilder(pendingIntent: PendingIntent, channelId: String) =
         NotificationCompat.Builder(this, channelId)
-            .setContentTitle("First Notification Service Running")
-            .setContentText("Check it out!")
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // Pastikan drawable ini ada!
+            .setContentTitle("Second Notification Service Running")
+            .setContentText("Checking ThirdWorker status...")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
-            .setTicker("First Notification Service is Running")
+            .setTicker("Second Notification Service is Running")
             .setOngoing(true)
 
     companion object {
-        const val NOTIFICATION_ID = 0xCA7 // ID unik Notifikasi
+        const val NOTIFICATION_ID = 0xCA8 // ID Notifikasi yang berbeda
         const val EXTRA_ID = "Id"
 
-        // LiveData untuk melacak penyelesaian
         private val mutableID = MutableLiveData<String>()
         val trackingCompletion: LiveData<String> = mutableID
     }
